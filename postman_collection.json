@@ -1,0 +1,279 @@
+{
+  "info": {
+    "name": "E-Commerce Backend API",
+    "description": "Complete API collection for testing the e-commerce backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": [""]
+        }
+      }
+    },
+    {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "Add Item to Cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"prod1\",\n  \"product_name\": \"Laptop\",\n  \"price\": 999.99,\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/cart/user1/items",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["cart", "user1", "items"]
+            }
+          }
+        },
+        {
+          "name": "Get Cart",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/cart/user1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["cart", "user1"]
+            }
+          }
+        },
+        {
+          "name": "Clear Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/cart/user1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["cart", "user1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Checkout",
+      "item": [
+        {
+          "name": "Checkout Without Coupon",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"user1\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/checkout",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["checkout"]
+            }
+          }
+        },
+        {
+          "name": "Checkout With Coupon",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"user1\",\n  \"coupon_code\": \"REPLACE_WITH_ACTUAL_CODE\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/checkout",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["checkout"]
+            }
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/checkout/ORDER_ID",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["checkout", "ORDER_ID"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Get Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/admin/analytics",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["admin", "analytics"]
+            }
+          }
+        },
+        {
+          "name": "List All Coupons",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/admin/coupons",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["admin", "coupons"]
+            }
+          }
+        },
+        {
+          "name": "Generate Coupon Manually",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/admin/coupons/generate",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["admin", "coupons", "generate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test Scenario: Generate Coupon",
+      "item": [
+        {
+          "name": "1. Add items for user1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"prod1\",\n  \"product_name\": \"Product 1\",\n  \"price\": 100.0,\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/cart/user1/items",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["cart", "user1", "items"]
+            }
+          }
+        },
+        {
+          "name": "2. Checkout user1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"user1\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/checkout",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["checkout"]
+            }
+          }
+        },
+        {
+          "name": "3. Repeat for user2-5 (Run 4 more times)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"prod1\",\n  \"product_name\": \"Product 1\",\n  \"price\": 100.0,\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/cart/user2/items",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["cart", "user2", "items"]
+            }
+          }
+        },
+        {
+          "name": "4. Check Analytics (See Generated Coupon)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/admin/analytics",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["admin", "analytics"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
