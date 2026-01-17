@@ -32,7 +32,7 @@ FastAPI-based backend system for e-commerce platform featuring shopping cart man
 - Auto-generated API documentation (Swagger/OpenAPI)
 - In-memory data storage (easily replaceable with database)
 - Comprehensive error handling
-- Full test coverage (25 tests)
+- Full test coverage (26 tests)
 
 ---
 
@@ -78,7 +78,7 @@ app/
 │   └── coupon_service.py
 └── main.py           # FastAPI application
 
-tests/                # Test suite (25 tests)
+tests/                # Test suite (26 tests)
 ├── test_cart.py
 ├── test_checkout.py
 └── test_coupon.py
@@ -125,7 +125,7 @@ python demo.py
 
 ## Testing
 
-Comprehensive test suite with 25 tests covering all functionality.
+Comprehensive test suite with 26 tests covering all functionality.
 
 ### Running Tests
 
@@ -162,8 +162,9 @@ pytest tests/test_coupon.py::TestCoupon::test_coupon_generated_after_nth_order
 - Used coupon rejection
 - Cross-user coupon usage prevention
 
-**Coupon Tests (11 tests)**:
+**Coupon Tests (12 tests)**:
 - Nth order generation logic
+- Per-user order tracking independence
 - Multiple coupon generation
 - Unique code generation
 - Discount calculation accuracy

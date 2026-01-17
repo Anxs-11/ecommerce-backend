@@ -274,3 +274,62 @@ class TestCoupon:
         # Should have 2 coupons (at 5th and 10th order) for user1
         assert len(data["discount_codes_generated"]) == 2
         assert all(c["user_id"] == "user1" for c in data["discount_codes_generated"])
+    
+    def test_coupon_generation_is_per_user_independent(self, client: TestClient):
+        """Test that each user's order count is tracked independently.
+        User A completing 3 orders and User B completing 1 order should NOT generate a coupon."""
+        # User A completes 3 orders
+        for i in range(3):
+            client.post(
+                "/cart/userA/items",
+                json={
+                    "product_id": "prod1",
+                    "product_name": "Product",
+                    "price": 100.0,
+                    "quantity": 1
+                }
+            )
+            client.post(
+                "/checkout",
+                json={"user_id": "userA"}
+            )
+        
+        # User B completes 1 order (total 4 orders across users, but each user has < 4)
+        client.post(
+            "/cart/userB/items",
+            json={
+                "product_id": "prod1",
+                "product_name": "Product",
+                "price": 100.0,
+                "quantity": 1
+            }
+        )
+        client.post(
+            "/checkout",
+            json={"user_id": "userB"}
+        )
+        
+        # Check analytics - NO coupons should be generated
+        analytics = client.get("/admin/analytics")
+        data = analytics.json()
+        assert len(data["discount_codes_generated"]) == 0, "No coupon should be generated when users don't individually reach 4 orders"
+        
+        # Now User A completes 4th order - should generate coupon for User A only
+        client.post(
+            "/cart/userA/items",
+            json={
+                "product_id": "prod1",
+                "product_name": "Product",
+                "price": 100.0,
+                "quantity": 1
+            }
+        )
+        client.post(
+            "/checkout",
+            json={"user_id": "userA"}
+        )
+        
+        analytics = client.get("/admin/analytics")
+        data = analytics.json()
+        assert len(data["discount_codes_generated"]) == 1
+        assert data["discount_codes_generated"][0]["user_id"] == "userA"
