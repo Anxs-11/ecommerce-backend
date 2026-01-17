@@ -7,11 +7,11 @@ class TestCoupon:
     """Test suite for coupon operations."""
     
     def test_coupon_generated_after_nth_order(self, client: TestClient):
-        """Test coupon is generated after every 5th order."""
-        # Complete 4 orders - should not generate coupon
-        for i in range(4):
+        """Test coupon is generated after user completes 4 orders (N-1), usable on 5th order."""
+        # User completes 3 orders - should not generate coupon
+        for i in range(3):
             client.post(
-                f"/cart/user{i}/items",
+                "/cart/user1/items",
                 json={
                     "product_id": "prod1",
                     "product_name": "Product",
@@ -21,15 +21,15 @@ class TestCoupon:
             )
             client.post(
                 "/checkout",
-                json={"user_id": f"user{i}"}
+                json={"user_id": "user1"}
             )
         
         analytics = client.get("/admin/analytics")
         assert len(analytics.json()["discount_codes_generated"]) == 0
         
-        # Complete 5th order - should generate coupon
+        # User completes 4th order - should generate coupon (usable on 5th order)
         client.post(
-            "/cart/user5/items",
+            "/cart/user1/items",
             json={
                 "product_id": "prod1",
                 "product_name": "Product",
@@ -39,18 +39,20 @@ class TestCoupon:
         )
         client.post(
             "/checkout",
-            json={"user_id": "user5"}
+            json={"user_id": "user1"}
         )
         
         analytics = client.get("/admin/analytics")
-        assert len(analytics.json()["discount_codes_generated"]) == 1
+        coupons = analytics.json()["discount_codes_generated"]
+        assert len(coupons) == 1
+        assert coupons[0]["user_id"] == "user1"
     
     def test_multiple_coupons_generated(self, client: TestClient):
-        """Test multiple coupons are generated at 5th, 10th order."""
-        # Complete 10 orders
-        for i in range(10):
+        """Test user gets multiple coupons after 4th and 9th orders (usable on 5th and 10th)."""
+        # Complete 9 orders for same user - should generate 2 coupons (after 4th and 9th)
+        for i in range(9):
             client.post(
-                f"/cart/user{i}/items",
+                "/cart/user1/items",
                 json={
                     "product_id": "prod1",
                     "product_name": "Product",
@@ -60,19 +62,21 @@ class TestCoupon:
             )
             client.post(
                 "/checkout",
-                json={"user_id": f"user{i}"}
+                json={"user_id": "user1"}
             )
         
         analytics = client.get("/admin/analytics")
         coupons = analytics.json()["discount_codes_generated"]
         assert len(coupons) == 2
+        # Both coupons should belong to user1
+        assert all(c["user_id"] == "user1" for c in coupons)
     
     def test_coupon_codes_are_unique(self, client: TestClient):
         """Test generated coupon codes are unique."""
-        # Complete 10 orders to generate 2 coupons
-        for i in range(10):
+        # Complete 9 orders for same user to generate 2 coupons (after 4th and 9th)
+        for i in range(9):
             client.post(
-                f"/cart/user{i}/items",
+                "/cart/user1/items",
                 json={
                     "product_id": "prod1",
                     "product_name": "Product",
@@ -82,7 +86,7 @@ class TestCoupon:
             )
             client.post(
                 "/checkout",
-                json={"user_id": f"user{i}"}
+                json={"user_id": "user1"}
             )
         
         analytics = client.get("/admin/analytics")
@@ -94,10 +98,10 @@ class TestCoupon:
     
     def test_coupon_applies_10_percent_discount(self, client: TestClient):
         """Test coupon applies 10% discount."""
-        # Generate coupon (will be for user4 - the 5th order)
+        # Generate coupon for user1 (complete 5 orders)
         for i in range(5):
             client.post(
-                f"/cart/user{i}/items",
+                "/cart/user1/items",
                 json={
                     "product_id": "prod1",
                     "product_name": "Product",
@@ -107,12 +111,13 @@ class TestCoupon:
             )
             client.post(
                 "/checkout",
-                json={"user_id": f"user{i}"}
+                json={"user_id": "user1"}
             )
         
         analytics = client.get("/admin/analytics")
         coupon_code = analytics.json()["discount_codes_generated"][0]["code"]
         coupon_owner = analytics.json()["discount_codes_generated"][0]["user_id"]
+        assert coupon_owner == "user1"
         
         # Use coupon with $500 order by the owner
         client.post(
@@ -171,10 +176,10 @@ class TestCoupon:
     
     def test_list_all_coupons(self, client: TestClient):
         """Test listing all coupons."""
-        # Generate coupons
+        # Generate coupon for user1
         for i in range(5):
             client.post(
-                f"/cart/user{i}/items",
+                "/cart/user1/items",
                 json={
                     "product_id": "prod1",
                     "product_name": "Product",
@@ -184,7 +189,7 @@ class TestCoupon:
             )
             client.post(
                 "/checkout",
-                json={"user_id": f"user{i}"}
+                json={"user_id": "user1"}
             )
         
         response = client.get("/admin/coupons")
@@ -192,15 +197,16 @@ class TestCoupon:
         assert response.status_code == 200
         coupons = response.json()
         assert len(coupons) == 1
+        assert coupons[0]["user_id"] == "user1"
         assert coupons[0]["status"] == "unused"
     
     def test_analytics_shows_correct_totals(self, client: TestClient):
         """Test analytics endpoint returns correct totals."""
-        # Complete 5 orders with varying amounts
+        # User1 completes 5 orders with varying amounts
         prices = [100.0, 200.0, 300.0, 400.0, 500.0]
-        for i, price in enumerate(prices):
+        for price in prices:
             client.post(
-                f"/cart/user{i}/items",
+                "/cart/user1/items",
                 json={
                     "product_id": "prod1",
                     "product_name": "Product",
@@ -210,13 +216,14 @@ class TestCoupon:
             )
             client.post(
                 "/checkout",
-                json={"user_id": f"user{i}"}
+                json={"user_id": "user1"}
             )
         
         # Get generated coupon and use it by the owner
         analytics_before = client.get("/admin/analytics")
         coupon_code = analytics_before.json()["discount_codes_generated"][0]["code"]
         coupon_owner = analytics_before.json()["discount_codes_generated"][0]["user_id"]
+        assert coupon_owner == "user1"
         
         client.post(
             f"/cart/{coupon_owner}/items",
@@ -245,10 +252,10 @@ class TestCoupon:
     
     def test_coupon_not_generated_if_previous_unused(self, client: TestClient):
         """Test new coupon generation continues after Nth orders."""
-        # Complete 10 orders
+        # User1 completes 10 orders
         for i in range(10):
             client.post(
-                f"/cart/user{i}/items",
+                "/cart/user1/items",
                 json={
                     "product_id": "prod1",
                     "product_name": "Product",
@@ -258,11 +265,12 @@ class TestCoupon:
             )
             client.post(
                 "/checkout",
-                json={"user_id": f"user{i}"}
+                json={"user_id": "user1"}
             )
         
         analytics = client.get("/admin/analytics")
         data = analytics.json()
         
-        # Should have 2 coupons (at 5th and 10th order)
+        # Should have 2 coupons (at 5th and 10th order) for user1
         assert len(data["discount_codes_generated"]) == 2
+        assert all(c["user_id"] == "user1" for c in data["discount_codes_generated"])

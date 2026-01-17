@@ -21,10 +21,13 @@ class CouponService:
             if code not in data_store.coupons:
                 return code
     
-    def should_generate_coupon(self) -> bool:
-        """Check if a coupon should be generated based on order count."""
-        # Generate coupon on every Nth successful order
-        return data_store.order_count > 0 and data_store.order_count % self.nth_order == 0
+    def should_generate_coupon(self, user_id: str) -> bool:
+        """
+        Check if a coupon should be generated for a specific user based on their order count.
+        Generates after (N-1) orders so coupon can be used ON the Nth order.
+        """
+        user_order_count = data_store.user_order_counts.get(user_id, 0)
+        return user_order_count > 0 and user_order_count % self.nth_order == (self.nth_order - 1)
     
     def can_generate_manual_coupon(self) -> bool:
         """Check if manual coupon generation is allowed."""

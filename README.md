@@ -201,17 +201,18 @@ All tests pass successfully with comprehensive edge case coverage.
 ### Coupon Generation Logic
 
 **Automatic Generation (Every Nth Order)**:
-1. System tracks total successful orders across all users
-2. Coupon is generated after every (N-1) orders, so it can be used ON the Nth order
+1. System tracks successful orders **per user individually**
+2. Coupon is generated after (N-1) orders so it can be used ON the Nth order
 3. Default N = 5, meaning coupon generated after 4th order, usable on 5th order
-4. Coupon is assigned to the user who triggered the generation
+4. Each user earns their own coupons independently
 5. Default discount: 10%
 6. Example with N=5: 
-   - Complete orders 1, 2, 3 → No coupon
-   - Complete **4th order** → Coupon generated ✅
-   - Use coupon on **5th order (the Nth order)** or any subsequent order
-   - Complete **9th order** → Another coupon generated ✅
-   - Use on **10th order** or later
+   - **User A**: Complete orders 1, 2, 3 → No coupon yet
+   - **User A**: Complete **4th order** → Coupon generated for User A ✅
+   - **User A**: Can use coupon ON **5th order (the Nth order)** or any later order
+   - **User B**: Must complete their own 4 orders to get their coupon (independent tracking)
+   - **User A**: Complete **9th order** → Another coupon for User A ✅
+   - **User A**: Can use this coupon on **10th order** or later
 
 **Admin Manual Generation**:
 1. Admin can generate coupons anytime without order count restriction

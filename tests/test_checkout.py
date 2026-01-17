@@ -55,10 +55,10 @@ class TestCheckout:
     
     def test_checkout_with_valid_coupon(self, client: TestClient):
         """Test checkout with valid coupon by the coupon owner."""
-        # Complete 5 orders to generate a coupon for user5
+        # User1 completes 5 orders to generate a coupon
         for i in range(5):
             client.post(
-                f"/cart/user{i}/items",
+                "/cart/user1/items",
                 json={
                     "product_id": "prod1",
                     "product_name": "Product",
@@ -68,15 +68,16 @@ class TestCheckout:
             )
             client.post(
                 "/checkout",
-                json={"user_id": f"user{i}"}
+                json={"user_id": "user1"}
             )
         
-        # Get generated coupon (should be for user4 - the 5th order)
+        # Get generated coupon (should be for user1)
         analytics = client.get("/admin/analytics")
         coupons = analytics.json()["discount_codes_generated"]
         assert len(coupons) == 1
         coupon_code = coupons[0]["code"]
         coupon_user = coupons[0]["user_id"]
+        assert coupon_user == "user1"
         
         # Add items to cart for the coupon owner
         client.post(
@@ -132,10 +133,10 @@ class TestCheckout:
     
     def test_checkout_with_used_coupon(self, client: TestClient):
         """Test checkout with already used coupon fails."""
-        # Complete 5 orders to generate a coupon for user4
+        # User1 completes 5 orders to generate a coupon
         for i in range(5):
             client.post(
-                f"/cart/user{i}/items",
+                "/cart/user1/items",
                 json={
                     "product_id": "prod1",
                     "product_name": "Product",
@@ -145,13 +146,14 @@ class TestCheckout:
             )
             client.post(
                 "/checkout",
-                json={"user_id": f"user{i}"}
+                json={"user_id": "user1"}
             )
         
         # Get generated coupon
         analytics = client.get("/admin/analytics")
         coupon_code = analytics.json()["discount_codes_generated"][0]["code"]
         coupon_user = analytics.json()["discount_codes_generated"][0]["user_id"]
+        assert coupon_user == "user1"
         
         # Use coupon in first checkout by the owner
         client.post(
@@ -188,10 +190,10 @@ class TestCheckout:
     
     def test_checkout_with_coupon_belonging_to_another_user(self, client: TestClient):
         """Test that a user cannot use another user's coupon."""
-        # Complete 5 orders to generate a coupon (will be for user4)
+        # User1 completes 5 orders to generate a coupon
         for i in range(5):
             client.post(
-                f"/cart/user{i}/items",
+                "/cart/user1/items",
                 json={
                     "product_id": "prod1",
                     "product_name": "Product",
@@ -201,13 +203,14 @@ class TestCheckout:
             )
             client.post(
                 "/checkout",
-                json={"user_id": f"user{i}"}
+                json={"user_id": "user1"}
             )
         
-        # Get generated coupon
+        # Get generated coupon (belongs to user1)
         analytics = client.get("/admin/analytics")
         coupon_code = analytics.json()["discount_codes_generated"][0]["code"]
         coupon_owner = analytics.json()["discount_codes_generated"][0]["user_id"]
+        assert coupon_owner == "user1"
         
         # Try to use the coupon with a different user
         different_user = "user999"

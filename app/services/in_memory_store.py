@@ -23,7 +23,7 @@ class DataStore:
         self.carts: Dict[str, Cart] = {}
         self.orders: Dict[str, Order] = {}
         self.coupons: Dict[str, Coupon] = {}
-        self.order_count: int = 0
+        self.user_order_counts: Dict[str, int] = {}  # Track orders per user
         self.total_discount_applied: float = 0.0
         self._initialized = True
     
@@ -32,7 +32,7 @@ class DataStore:
         self.carts.clear()
         self.orders.clear()
         self.coupons.clear()
-        self.order_count = 0
+        self.user_order_counts.clear()
         self.total_discount_applied = 0.0
 
 

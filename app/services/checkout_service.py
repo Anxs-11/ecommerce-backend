@@ -89,11 +89,11 @@ class CheckoutService:
             coupon_service.mark_coupon_as_used(coupon_code, order_id)
             data_store.total_discount_applied += discount_amount
         
-        # Increment successful order count
-        data_store.order_count += 1
+        # Increment successful order count for this user
+        data_store.user_order_counts[user_id] = data_store.user_order_counts.get(user_id, 0) + 1
         
         # Check if we should generate a new coupon for this user
-        if coupon_service.should_generate_coupon():
+        if coupon_service.should_generate_coupon(user_id):
             coupon_service.create_coupon(user_id)
         
         # Clear cart
