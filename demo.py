@@ -83,17 +83,17 @@ def demo_checkout_without_coupon():
 
 
 def demo_generate_coupon():
-    """Generate coupon by completing 5 orders."""
-    print_section("3. GENERATING COUPON (5th ORDER)")
+    """Generate coupon by completing 4 orders for one user."""
+    print_section("3. GENERATING COUPON (AFTER 4th ORDER)")
     
-    print("► Completing 5 orders to generate coupon...\n")
+    print("► User 'coupon_user' completing 4 orders to generate coupon...\n")
     
-    for i in range(1, 6):
-        print(f"Order {i}/5:")
+    for i in range(1, 5):
+        print(f"Order {i}/4:")
         
         # Add item
         requests.post(
-            f"{BASE_URL}/cart/user{i}/items",
+            f"{BASE_URL}/cart/coupon_user/items",
             json={
                 "product_id": f"prod{i}",
                 "product_name": f"Product {i}",
@@ -105,7 +105,7 @@ def demo_generate_coupon():
         # Checkout
         response = requests.post(
             f"{BASE_URL}/checkout",
-            json={"user_id": f"user{i}"}
+            json={"user_id": "coupon_user"}
         )
         
         if response.status_code == 201:
@@ -120,21 +120,25 @@ def demo_generate_coupon():
     
     if data["discount_codes_generated"]:
         coupon = data["discount_codes_generated"][0]
-        print(f"\n🎉 Coupon Generated!")
+        print(f"\n🎉 Coupon Generated After 4th Order!")
         print(f"   Code: {coupon['code']}")
+        print(f"   User: {coupon['user_id']}")
         print(f"   Discount: {coupon['discount_percentage']}%")
         print(f"   Status: {coupon['status']}")
+        print(f"   Can be used on 5th order!")
         return coupon['code']
     
     return None
 
 
 def demo_checkout_with_coupon(coupon_code: str):
-    """Demonstrate checkout with coupon."""
-    print_section("4. CHECKOUT WITH COUPON")
+    """Demonstrate checkout with coupon on 5th order."""
+    print_section("4. USE COUPON ON 5TH ORDER")
+    
+    print("► Now the user can use the generated coupon on their 5th order!\n")
     
     # Add items to cart
-    print("► Adding items to cart...")
+    print("► Adding items to 5th order cart...")
     response = requests.post(
         f"{BASE_URL}/cart/coupon_user/items",
         json={
@@ -147,7 +151,7 @@ def demo_checkout_with_coupon(coupon_code: str):
     print(f"Cart Total: ${response.json()['total_amount']}\n")
     
     # Checkout with coupon
-    print(f"► Applying coupon: {coupon_code}")
+    print(f"► Processing 5th order with coupon: {coupon_code}")
     response = requests.post(
         f"{BASE_URL}/checkout",
         json={
@@ -158,18 +162,18 @@ def demo_checkout_with_coupon(coupon_code: str):
     
     if response.status_code == 201:
         data = response.json()
-        print(f"\n✅ Order completed with discount!")
+        discount_pct = round((data['discount_amount'] / data['subtotal']) * 100, 1) if data['discount_amount'] > 0 else 0
+        print(f"\n✅ 5th Order completed with coupon discount!")
         print(f"   Subtotal: ${data['subtotal']}")
-        print(f"   Discount: -${data['discount_amount']}")
+        print(f"   Discount: -${data['discount_amount']} ({discount_pct}%)")
         print(f"   Total: ${data['total_amount']}")
-        print(f"   Saved: ${data['discount_amount']} (10%)")
     else:
         print_response(response)
 
 
 def demo_coupon_reuse_attempt(coupon_code: str):
     """Demonstrate coupon reuse prevention."""
-    print_section("5. COUPON REUSE PREVENTION")
+    print_section("5. COUPON REUSE PREVENTION by different user")
     
     # Add items to cart
     print("► Adding items to cart...")
