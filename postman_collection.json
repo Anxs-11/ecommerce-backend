@@ -175,7 +175,16 @@
           "name": "Generate Coupon Manually",
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"user1\",\n  \"discount_percentage\": 15.0,\n  \"reason\": \"Customer loyalty reward\"\n}"
+            },
             "url": {
               "raw": "http://localhost:8000/admin/coupons/generate",
               "protocol": "http",
