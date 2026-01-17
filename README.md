@@ -201,7 +201,7 @@ All tests pass successfully with comprehensive edge case coverage.
 ### Coupon Generation Logic
 
 **Automatic Generation (Every Nth Order)**:
-1. System tracks total successful orders per user
+1. System tracks total successful orders across all users
 2. Coupon is generated after every (N-1) orders, so it can be used ON the Nth order
 3. Default N = 5, meaning coupon generated after 4th order, usable on 5th order
 4. Coupon is assigned to the user who triggered the generation
