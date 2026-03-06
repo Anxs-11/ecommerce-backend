@@ -59,6 +59,9 @@ class CouponService:
         if coupon.user_id != user_id:
             return False, "This coupon belongs to another user and cannot be used"
         
+        if coupon.is_expired():
+            return False, "Coupon has expired"
+        
         if not coupon.is_valid():
             return False, "Coupon has already been used"
         
