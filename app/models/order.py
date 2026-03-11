@@ -45,15 +45,11 @@ class Order(BaseModel):
         """Get total number of items in order."""
         return sum(item.quantity for item in self.items)
     
-    def cancel(self) -> None:
-        """Cancel the order."""
-        self.status = OrderStatus.CANCELLED
-        self.cancelled_at = datetime.utcnow()
-    
     def is_active(self) -> bool:
         """Check if order is active."""
         return self.status == OrderStatus.ACTIVE
     
-    def is_cancelled(self) -> bool:
-        """Check if order is cancelled."""
-        return self.status == OrderStatus.CANCELLED
+    def cancel(self) -> None:
+        """Cancel the order."""
+        self.status = OrderStatus.CANCELLED
+        self.cancelled_at = datetime.utcnow()
