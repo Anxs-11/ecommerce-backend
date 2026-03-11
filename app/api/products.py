@@ -9,14 +9,15 @@ router = APIRouter(prefix="/products", tags=["Products"])
 
 @router.get("/search", response_model=List[Product])
 def search_products(
-    q: str = Query(..., description="Search query for product name", min_length=1)
+    q: str = Query(..., description="Search query for product name (case-insensitive, partial match)")
 ) -> List[Product]:
-    """Search products by name (case-insensitive, partial match).
+    """Search products by name.
     
     Args:
         q: Search query string (required)
         
     Returns:
         List of matching products (max 20 items)
+        Returns empty list if no matches found
     """
-    return product_service.search_products(q, limit=20)
+    return product_service.search_products(query=q, limit=20)
