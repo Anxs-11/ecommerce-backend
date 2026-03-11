@@ -70,7 +70,7 @@ class CouponService:
         if coupon:
             coupon.mark_as_used(order_id)
     
-    def re_credit_coupon(self, code: str) -> None:
+    def recredit_coupon(self, code: str) -> None:
         """Re-credit a coupon (mark as unused)."""
         coupon = self.get_coupon(code)
         if coupon:
