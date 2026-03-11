@@ -16,6 +16,12 @@ class CheckoutRequest(BaseModel):
     coupon_code: Optional[str] = Field(None, description="Optional coupon code")
 
 
+class CancelOrderRequest(BaseModel):
+    """Request model for order cancellation."""
+    
+    user_id: str = Field(..., description="User identifier requesting cancellation")
+
+
 class OrderItemResponse(BaseModel):
     """Order item in response."""
     
@@ -42,20 +48,13 @@ class CheckoutResponse(BaseModel):
     cancelled_at: Optional[datetime] = None
 
 
-class CancelOrderRequest(BaseModel):
-    """Request model for cancelling an order."""
-    
-    user_id: str = Field(..., description="User identifier requesting cancellation")
-
-
 class CancelOrderResponse(BaseModel):
     """Response model for order cancellation."""
     
     order_id: str
     status: str
     message: str
-    coupon_re_credited: bool
-    coupon_code: Optional[str] = None
+    coupon_re_credited: Optional[str] = None
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=CheckoutResponse)
@@ -152,13 +151,11 @@ def cancel_order(order_id: str, request: CancelOrderRequest):
     Cancel an order.
     
     - **order_id**: Order identifier
-    - **user_id**: User identifier requesting cancellation
+    - **user_id**: User identifier requesting cancellation (must be order owner)
     
-    If the order had a discount coupon applied, it will be re-credited to the customer.
+    If the order had a coupon applied, it will be re-credited to the customer.
     """
-    success, error, coupon_re_credited, coupon_code = checkout_service.cancel_order(
-        order_id, request.user_id
-    )
+    success, error, coupon_code = checkout_service.cancel_order(order_id, request.user_id)
     
     if not success:
         if "not found" in error.lower():
@@ -166,9 +163,14 @@ def cancel_order(order_id: str, request: CancelOrderRequest):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=error
             )
-        elif "not authorized" in error.lower() or "another user" in error.lower():
+        elif "not authorized" in error.lower() or "cannot cancel" in error.lower():
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
+                detail=error
+            )
+        elif "already cancelled" in error.lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
                 detail=error
             )
         else:
@@ -178,13 +180,12 @@ def cancel_order(order_id: str, request: CancelOrderRequest):
             )
     
     message = "Order cancelled successfully"
-    if coupon_re_credited:
-        message += f" and coupon {coupon_code} has been re-credited"
+    if coupon_code:
+        message += f". Coupon {coupon_code} has been re-credited to your account."
     
     return CancelOrderResponse(
         order_id=order_id,
-        status=OrderStatus.CANCELLED.value,
+        status="cancelled",
         message=message,
-        coupon_re_credited=coupon_re_credited,
-        coupon_code=coupon_code
+        coupon_re_credited=coupon_code
     )
