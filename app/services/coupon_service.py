@@ -71,12 +71,10 @@ class CouponService:
             coupon.mark_as_used(order_id)
     
     def re_credit_coupon(self, code: str) -> None:
-        """Re-credit a coupon by resetting it to unused status."""
+        """Re-credit a coupon (mark as unused)."""
         coupon = self.get_coupon(code)
         if coupon:
-            coupon.status = CouponStatus.UNUSED
-            coupon.used_at = None
-            coupon.order_id = None
+            coupon.mark_as_unused()
     
     def get_all_coupons(self) -> List[Coupon]:
         """Get all coupons."""
