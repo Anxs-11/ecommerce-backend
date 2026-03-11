@@ -2,6 +2,7 @@
 import uuid
 from typing import Optional, Tuple
 from app.models import Order, OrderItem
+from app.models.order import OrderStatus
 from app.services.in_memory_store import data_store
 from app.services.cart_service import cart_service
 from app.services.coupon_service import coupon_service
@@ -78,7 +79,8 @@ class CheckoutService:
             subtotal=subtotal,
             discount_amount=discount_amount,
             total_amount=total_amount,
-            coupon_code=coupon_code
+            coupon_code=coupon_code,
+            status=OrderStatus.ACTIVE
         )
         
         # Save order
@@ -100,6 +102,50 @@ class CheckoutService:
         cart_service.clear_cart(user_id)
         
         return order, None
+    
+    def cancel_order(
+        self, 
+        order_id: str, 
+        user_id: str
+    ) -> Tuple[bool, Optional[str], bool, Optional[str]]:
+        """
+        Cancel an order.
+        
+        Returns:
+            tuple: (success, error_message, coupon_re_credited, coupon_code)
+        """
+        # Get order
+        order = data_store.orders.get(order_id)
+        
+        if not order:
+            return False, "Order not found", False, None
+        
+        # Check if user owns the order
+        if order.user_id != user_id:
+            return False, "This order does not belong to you and cannot be cancelled", False, None
+        
+        # Check if order is already cancelled
+        if order.status == OrderStatus.CANCELLED:
+            return False, "Order has already been cancelled", False, None
+        
+        # Cancel the order
+        order.cancel()
+        
+        # Re-credit coupon if one was used
+        coupon_re_credited = False
+        coupon_code = None
+        
+        if order.coupon_code:
+            coupon = coupon_service.get_coupon(order.coupon_code)
+            if coupon:
+                coupon.mark_as_unused()
+                coupon_re_credited = True
+                coupon_code = order.coupon_code
+                
+                # Subtract the discount from total discount applied
+                data_store.total_discount_applied -= order.discount_amount
+        
+        return True, None, coupon_re_credited, coupon_code
     
     def get_order(self, order_id: str) -> Optional[Order]:
         """Get order by ID."""

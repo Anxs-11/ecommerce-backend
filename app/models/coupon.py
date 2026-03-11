@@ -30,6 +30,12 @@ class Coupon(BaseModel):
         self.used_at = datetime.utcnow()
         self.order_id = order_id
     
+    def mark_as_unused(self) -> None:
+        """Mark coupon as unused (for re-crediting)."""
+        self.status = CouponStatus.UNUSED
+        self.used_at = None
+        self.order_id = None
+    
     def is_valid(self) -> bool:
         """Check if coupon is valid for use."""
         return self.status == CouponStatus.UNUSED

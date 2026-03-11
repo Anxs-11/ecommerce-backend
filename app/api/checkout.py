@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 from app.services.checkout_service import checkout_service
+from app.models.order import OrderStatus
 
 router = APIRouter(prefix="/checkout", tags=["Checkout"])
 
@@ -13,6 +14,12 @@ class CheckoutRequest(BaseModel):
     
     user_id: str = Field(..., description="User identifier")
     coupon_code: Optional[str] = Field(None, description="Optional coupon code")
+
+
+class CancelOrderRequest(BaseModel):
+    """Request model for order cancellation."""
+    
+    user_id: str = Field(..., description="User identifier requesting cancellation")
 
 
 class OrderItemResponse(BaseModel):
@@ -36,7 +43,19 @@ class CheckoutResponse(BaseModel):
     discount_amount: float
     total_amount: float
     coupon_code: Optional[str]
+    status: str
     created_at: datetime
+    cancelled_at: Optional[datetime] = None
+
+
+class CancelOrderResponse(BaseModel):
+    """Response model for order cancellation."""
+    
+    order_id: str
+    status: str
+    message: str
+    coupon_re_credited: bool
+    coupon_code: Optional[str] = None
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=CheckoutResponse)
@@ -82,7 +101,9 @@ def checkout(request: CheckoutRequest):
         discount_amount=order.discount_amount,
         total_amount=order.total_amount,
         coupon_code=order.coupon_code,
-        created_at=order.created_at
+        status=order.status.value,
+        created_at=order.created_at,
+        cancelled_at=order.cancelled_at
     )
 
 
@@ -119,5 +140,51 @@ def get_order(order_id: str):
         discount_amount=order.discount_amount,
         total_amount=order.total_amount,
         coupon_code=order.coupon_code,
-        created_at=order.created_at
+        status=order.status.value,
+        created_at=order.created_at,
+        cancelled_at=order.cancelled_at
+    )
+
+
+@router.post("/{order_id}/cancel", response_model=CancelOrderResponse)
+def cancel_order(order_id: str, request: CancelOrderRequest):
+    """
+    Cancel an order.
+    
+    - **order_id**: Order identifier
+    - **user_id**: User identifier requesting cancellation (must be order owner)
+    
+    If the order had a coupon applied, it will be re-credited to the customer.
+    """
+    success, error, coupon_re_credited, coupon_code = checkout_service.cancel_order(
+        order_id, request.user_id
+    )
+    
+    if not success:
+        if "not found" in error.lower():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=error
+            )
+        elif "does not belong" in error.lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=error
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error
+            )
+    
+    message = "Order cancelled successfully"
+    if coupon_re_credited:
+        message += f" and coupon {coupon_code} has been re-credited"
+    
+    return CancelOrderResponse(
+        order_id=order_id,
+        status="cancelled",
+        message=message,
+        coupon_re_credited=coupon_re_credited,
+        coupon_code=coupon_code if coupon_re_credited else None
     )
