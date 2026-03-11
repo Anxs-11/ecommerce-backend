@@ -54,7 +54,8 @@ class CancelOrderResponse(BaseModel):
     order_id: str
     status: str
     message: str
-    coupon_re_credited: Optional[str] = None
+    coupon_re_credited: bool
+    coupon_code: Optional[str] = None
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=CheckoutResponse)
@@ -155,7 +156,9 @@ def cancel_order(order_id: str, request: CancelOrderRequest):
     
     If the order had a coupon applied, it will be re-credited to the customer.
     """
-    success, error, coupon_code = checkout_service.cancel_order(order_id, request.user_id)
+    success, error, coupon_re_credited, coupon_code = checkout_service.cancel_order(
+        order_id, request.user_id
+    )
     
     if not success:
         if "not found" in error.lower():
@@ -163,14 +166,9 @@ def cancel_order(order_id: str, request: CancelOrderRequest):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=error
             )
-        elif "not authorized" in error.lower() or "cannot cancel" in error.lower():
+        elif "does not belong" in error.lower():
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=error
-            )
-        elif "already cancelled" in error.lower():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
                 detail=error
             )
         else:
@@ -180,12 +178,13 @@ def cancel_order(order_id: str, request: CancelOrderRequest):
             )
     
     message = "Order cancelled successfully"
-    if coupon_code:
-        message += f". Coupon {coupon_code} has been re-credited to your account."
+    if coupon_re_credited:
+        message += f" and coupon {coupon_code} has been re-credited"
     
     return CancelOrderResponse(
         order_id=order_id,
         status="cancelled",
         message=message,
-        coupon_re_credited=coupon_code
+        coupon_re_credited=coupon_re_credited,
+        coupon_code=coupon_code if coupon_re_credited else None
     )
