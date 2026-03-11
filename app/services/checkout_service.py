@@ -2,7 +2,6 @@
 import uuid
 from typing import Optional, Tuple
 from app.models import Order, OrderItem
-from app.models.order import OrderStatus
 from app.services.in_memory_store import data_store
 from app.services.cart_service import cart_service
 from app.services.coupon_service import coupon_service
@@ -79,8 +78,7 @@ class CheckoutService:
             subtotal=subtotal,
             discount_amount=discount_amount,
             total_amount=total_amount,
-            coupon_code=coupon_code,
-            status=OrderStatus.ACTIVE
+            coupon_code=coupon_code
         )
         
         # Save order
@@ -103,6 +101,35 @@ class CheckoutService:
         
         return order, None
     
+    def cancel_order(self, order_id: str, user_id: str) -> Tuple[bool, Optional[str]]:
+        """
+        Cancel an order and re-credit coupon if applicable.
+        
+        Returns:
+            tuple: (success, error_message)
+        """
+        order = data_store.orders.get(order_id)
+        
+        if not order:
+            return False, "Order not found"
+        
+        if order.user_id != user_id:
+            return False, "You can only cancel your own orders"
+        
+        if order.is_cancelled():
+            return False, "Order is already cancelled"
+        
+        # Cancel the order
+        order.cancel()
+        
+        # Re-credit coupon if one was used
+        if order.coupon_code:
+            coupon_service.re_credit_coupon(order.coupon_code)
+            # Subtract the discount from total discount applied
+            data_store.total_discount_applied -= order.discount_amount
+        
+        return True, None
+    
     def get_order(self, order_id: str) -> Optional[Order]:
         """Get order by ID."""
         return data_store.orders.get(order_id)
@@ -110,48 +137,6 @@ class CheckoutService:
     def get_all_orders(self):
         """Get all orders."""
         return list(data_store.orders.values())
-    
-    def cancel_order(
-        self, 
-        order_id: str, 
-        user_id: str
-    ) -> Tuple[bool, Optional[str], bool, Optional[str]]:
-        """
-        Cancel an order and re-credit coupon if applicable.
-        
-        Returns:
-            tuple: (success, error_message, coupon_recredited, coupon_code)
-        """
-        # Get order
-        order = self.get_order(order_id)
-        
-        if not order:
-            return False, "Order not found", False, None
-        
-        # Check if order belongs to user
-        if order.user_id != user_id:
-            return False, "This order does not belong to you and cannot be cancelled", False, None
-        
-        # Check if order is already cancelled
-        if order.status == OrderStatus.CANCELLED:
-            return False, "Order has already been cancelled", False, None
-        
-        # Cancel the order
-        order.cancel()
-        
-        # Re-credit coupon if one was used
-        coupon_recredited = False
-        coupon_code = None
-        
-        if order.coupon_code:
-            coupon_code = order.coupon_code
-            coupon_service.recredit_coupon(coupon_code)
-            coupon_recredited = True
-            
-            # Subtract the discount from total discount applied
-            data_store.total_discount_applied -= order.discount_amount
-        
-        return True, None, coupon_recredited, coupon_code
 
 
 # Global service instance
