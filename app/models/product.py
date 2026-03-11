@@ -7,9 +7,8 @@ class Product(BaseModel):
     
     id: str = Field(..., description="Unique product identifier")
     name: str = Field(..., description="Product name")
-    price: float = Field(..., description="Product price", gt=0)
+    price: float = Field(..., gt=0, description="Product price (must be positive)")
     description: str = Field(default="", description="Product description")
-    stock: int = Field(default=0, description="Available stock quantity", ge=0)
     
     class Config:
         """Pydantic config."""
@@ -18,7 +17,6 @@ class Product(BaseModel):
                 "id": "prod_123",
                 "name": "Wireless Mouse",
                 "price": 29.99,
-                "description": "Ergonomic wireless mouse with USB receiver",
-                "stock": 50
+                "description": "Ergonomic wireless mouse with USB receiver"
             }
         }
