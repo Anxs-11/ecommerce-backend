@@ -53,3 +53,7 @@ class Order(BaseModel):
     def is_active(self) -> bool:
         """Check if order is active."""
         return self.status == OrderStatus.ACTIVE
+    
+    def is_cancelled(self) -> bool:
+        """Check if order is cancelled."""
+        return self.status == OrderStatus.CANCELLED
