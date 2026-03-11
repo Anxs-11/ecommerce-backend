@@ -1,6 +1,6 @@
 """Checkout service for processing orders."""
 import uuid
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Tuple
 from app.models import Order, OrderItem
 from app.models.order import OrderStatus
 from app.services.in_memory_store import data_store
@@ -115,26 +115,26 @@ class CheckoutService:
         self, 
         order_id: str, 
         user_id: str
-    ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    ) -> Tuple[bool, Optional[str], bool, Optional[str]]:
         """
         Cancel an order and re-credit coupon if applicable.
         
         Returns:
-            tuple: (result_dict, error_message)
+            tuple: (success, error_message, coupon_recredited, coupon_code)
         """
         # Get order
         order = self.get_order(order_id)
         
         if not order:
-            return None, "Order not found"
+            return False, "Order not found", False, None
         
-        # Check if user is authorized to cancel this order
+        # Check if order belongs to user
         if order.user_id != user_id:
-            return None, "You are not authorized to cancel this order. You can only cancel your own orders."
+            return False, "This order does not belong to you and cannot be cancelled", False, None
         
         # Check if order is already cancelled
         if order.status == OrderStatus.CANCELLED:
-            return None, "Order has already been cancelled"
+            return False, "Order has already been cancelled", False, None
         
         # Cancel the order
         order.cancel()
@@ -144,25 +144,14 @@ class CheckoutService:
         coupon_code = None
         
         if order.coupon_code:
-            coupon = coupon_service.get_coupon(order.coupon_code)
-            if coupon:
-                coupon_service.recredit_coupon(order.coupon_code)
-                coupon_recredited = True
-                coupon_code = order.coupon_code
-                # Subtract the discount from total discount applied
-                data_store.total_discount_applied -= order.discount_amount
+            coupon_code = order.coupon_code
+            coupon_service.recredit_coupon(coupon_code)
+            coupon_recredited = True
+            
+            # Subtract the discount from total discount applied
+            data_store.total_discount_applied -= order.discount_amount
         
-        result = {
-            "order_id": order_id,
-            "status": order.status.value,
-            "message": "Order cancelled successfully",
-            "coupon_recredited": coupon_recredited
-        }
-        
-        if coupon_code:
-            result["coupon_code"] = coupon_code
-        
-        return result, None
+        return True, None, coupon_recredited, coupon_code
 
 
 # Global service instance
