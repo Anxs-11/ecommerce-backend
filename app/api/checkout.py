@@ -156,15 +156,17 @@ def cancel_order(order_id: str, request: CancelOrderRequest):
     
     Returns cancellation confirmation with coupon re-credit status.
     """
-    result, error = checkout_service.cancel_order(order_id, request.user_id)
+    success, error, coupon_recredited, coupon_code = checkout_service.cancel_order(
+        order_id, request.user_id
+    )
     
-    if error:
+    if not success:
         if "not found" in error.lower():
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=error
             )
-        elif "not authorized" in error.lower() or "cannot cancel" in error.lower():
+        elif "does not belong" in error.lower() or "cannot cancel" in error.lower():
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=error
@@ -180,10 +182,14 @@ def cancel_order(order_id: str, request: CancelOrderRequest):
                 detail=error
             )
     
+    message = "Order cancelled successfully"
+    if coupon_recredited:
+        message += f" and coupon {coupon_code} has been re-credited to your account"
+    
     return CancelOrderResponse(
-        order_id=result["order_id"],
-        status=result["status"],
-        message=result["message"],
-        coupon_recredited=result["coupon_recredited"],
-        coupon_code=result.get("coupon_code")
+        order_id=order_id,
+        status=OrderStatus.CANCELLED.value,
+        message=message,
+        coupon_recredited=coupon_recredited,
+        coupon_code=coupon_code if coupon_recredited else None
     )
