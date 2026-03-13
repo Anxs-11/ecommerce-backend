@@ -2,6 +2,7 @@
 from .cart import CartItem, Cart, AddToCartRequest
 from .order import Order, OrderItem
 from .coupon import Coupon, CouponStatus
+from .product import Product
 
 __all__ = [
     "CartItem",
@@ -11,4 +12,5 @@ __all__ = [
     "OrderItem",
     "Coupon",
     "CouponStatus",
+    "Product",
 ]

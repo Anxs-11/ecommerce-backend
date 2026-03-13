@@ -1,7 +1,7 @@
 """Main FastAPI application."""
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from app.api import cart_router, checkout_router, admin_router
+from app.api import cart_router, checkout_router, admin_router, products_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -31,6 +31,7 @@ def health_check():
 app.include_router(cart_router)
 app.include_router(checkout_router)
 app.include_router(admin_router)
+app.include_router(products_router)
 
 
 if __name__ == "__main__":
