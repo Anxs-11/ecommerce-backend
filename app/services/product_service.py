@@ -46,7 +46,7 @@ class ProductService:
         """
         query_lower = query.lower().strip()
         
-        # Filter products by name (case-insensitive partial match)
+        # Filter products by name using case-insensitive partial match (ilike behavior)
         matching_products = [
             product for product in data_store.products.values()
             if query_lower in product.name.lower()
