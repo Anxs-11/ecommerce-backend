@@ -14,7 +14,9 @@ class AddToCartRequest(BaseModel):
     @field_validator("price")
     @classmethod
     def validate_price(cls, v: float) -> float:
-        """Ensure price has at most 2 decimal places."""
+        """Ensure price is positive and has at most 2 decimal places."""
+        if v <= 0:
+            raise ValueError("Price must be greater than 0")
         return round(v, 2)
 
 
@@ -23,8 +25,8 @@ class CartItem(BaseModel):
     
     product_id: str
     product_name: str
-    price: float
-    quantity: int
+    price: float = Field(..., gt=0)
+    quantity: int = Field(..., gt=0)
     
     @property
     def total_price(self) -> float:
