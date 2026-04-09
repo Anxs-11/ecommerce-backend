@@ -8,13 +8,15 @@ class AddToCartRequest(BaseModel):
     
     product_id: str = Field(..., description="Unique product identifier")
     product_name: str = Field(..., description="Product name")
-    price: float = Field(..., gt=0, description="Product price, must be positive")
+    price: float = Field(..., ge=0, description="Product price, must be non-negative")
     quantity: int = Field(..., gt=0, description="Quantity to add, must be positive")
     
     @field_validator("price")
     @classmethod
     def validate_price(cls, v: float) -> float:
-        """Ensure price has at most 2 decimal places."""
+        """Ensure price is non-negative and has at most 2 decimal places."""
+        if v < 0:
+            raise ValueError("Price cannot be negative")
         return round(v, 2)
 
 
@@ -23,8 +25,16 @@ class CartItem(BaseModel):
     
     product_id: str
     product_name: str
-    price: float
-    quantity: int
+    price: float = Field(..., ge=0, description="Product price, must be non-negative")
+    quantity: int = Field(..., gt=0, description="Quantity, must be positive")
+    
+    @field_validator("price")
+    @classmethod
+    def validate_price(cls, v: float) -> float:
+        """Ensure price is non-negative."""
+        if v < 0:
+            raise ValueError("Price cannot be negative")
+        return v
     
     @property
     def total_price(self) -> float:
